@@ -1,30 +1,28 @@
-/* eslint-disable jsx-a11y/anchor-is-valid */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Aptitude.css';
 import Navbar from '../Components/Navbar';
 
-
-const Aptitude1 = () => {
+const Aptitude1 = ({ questions }) => {
   const [timeRemaining, setTimeRemaining] = useState(14 * 60 + 25);
   const [selectedAnswer, setSelectedAnswer] = useState(null);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [activeTab, setActiveTab] = useState('STUDENT');
-  const [intervalId, setIntervalId] = useState(null);
-  const correctAnswer = 'C';
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
-  if (!intervalId) {
-    const newIntervalId = setInterval(() => {
-      setTimeRemaining(prevTime => {
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setTimeRemaining((prevTime) => {
         if (prevTime <= 1) {
-          clearInterval(newIntervalId); 
-          setIsSubmitted(true); 
+          clearInterval(timerId);
+          setIsSubmitted(true);
           return 0;
         }
         return prevTime - 1;
       });
     }, 1000);
-    setIntervalId(newIntervalId);
-  }
+
+    return () => clearInterval(timerId);
+  }, []);
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -41,38 +39,47 @@ const Aptitude1 = () => {
   const handleSubmit = () => {
     if (selectedAnswer) {
       setIsSubmitted(true);
-      clearInterval(intervalId); 
     }
   };
 
+  const handleNextQuestion = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
+      setSelectedAnswer(null);
+      setIsSubmitted(false);
+    }
+  };
+
+  const { question, options, correctAnswer } = questions[currentQuestionIndex];
+
   return (
-      <div className="container">
+    <div className="container">
       <div className="mainContent">
         <Navbar />
         <div className='hero'>
-        <div className="tabsContainer">
-          <div className={`tab ${activeTab === 'STUDENT' ? 'activeTab' : ''}`} onClick={() => setActiveTab('STUDENT')}>STUDENT</div>
-          <div className={`tab ${activeTab === 'ADMIN' ? 'activeTab' : ''}`} onClick={() => setActiveTab('ADMIN')}>ADMIN</div>
-        </div>
+          <div className="tabsContainer">
+            <div className={`tab ${activeTab === 'STUDENT' ? 'activeTab' : ''}`} onClick={() => setActiveTab('STUDENT')}>STUDENT</div>
+            <div className={`tab ${activeTab === 'ADMIN' ? 'activeTab' : ''}`} onClick={() => setActiveTab('ADMIN')}>ADMIN</div>
+          </div>
 
-        <div className="infoBar">
-          <div className="codeBox">CODE #abcd</div>
-          <div className="timerBox">Time remaining: {formatTime(timeRemaining)}</div>
-        </div>
+          <div className="infoBar">
+            <div className="codeBox">CODE #abcd</div>
+            <div className="timerBox">Time remaining: {formatTime(timeRemaining)}</div>
+          </div>
         </div>
 
         <div className="questionContainer">
           <div className="section">
             <div className="sectionHeader">{isSubmitted ? "#After submission:" : "#Before submission:"}</div>
             <div className="questionTitle">
-              Question 1:
+              Question {currentQuestionIndex + 1}:
             </div>
-            <p>If all Zings are Bings, and some Bings are Lings, which of the following statements must be true?</p>
+            <p>{question}</p>
             
             <div className="optionsContainer">
-              {["A", "B", "C", "D"].map((option) => (
+              {options.map((option, index) => (
                 <div
-                  key={option}
+                  key={index}
                   className={`option 
                     ${selectedAnswer === option ? "selectedOption" : ""} 
                     ${isSubmitted && option === correctAnswer ? "correctOption" : ""} 
@@ -83,23 +90,24 @@ const Aptitude1 = () => {
                     ${selectedAnswer === option ? "selectedLetter" : ""} 
                     ${isSubmitted && option === correctAnswer ? "correctLetter" : ""} 
                     ${isSubmitted && selectedAnswer === option && selectedAnswer !== correctAnswer ? "incorrectLetter" : ""}`}>
-                    {option}
+                    {String.fromCharCode(65 + index)}
                   </div>
-                  <div>
-                    {option === "A" && "All Zings are Lings"}
-                    {option === "B" && "Some Zings might be Lings"}
-                    {option === "C" && "No Zings are Lings"}
-                    {option === "D" && "All Lings are Bings"}
-                  </div>
+                  <div>{option}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {!isSubmitted && (
+          {!isSubmitted ? (
             <button className="submitButton" onClick={handleSubmit} disabled={!selectedAnswer}>
               Submit Test
             </button>
+          ) : (
+            currentQuestionIndex < questions.length - 1 && (
+              <button className="nextButton" onClick={handleNextQuestion}>
+                Next Question
+              </button>
+            )
           )}
         </div>
 
@@ -107,7 +115,7 @@ const Aptitude1 = () => {
           <p>Time remaining: {formatTime(timeRemaining)}</p>
         </div>
       </div>
-      </div>
+    </div>
   );
 };
 
